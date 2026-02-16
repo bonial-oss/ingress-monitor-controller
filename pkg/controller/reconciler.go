@@ -41,8 +41,8 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req reconcile.Request
 		// just for monitor deletion.
 		ingress = &networkingv1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      req.NamespacedName.Name,
-				Namespace: req.NamespacedName.Namespace,
+				Name:      req.Name,
+				Namespace: req.Namespace,
 			},
 		}
 

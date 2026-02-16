@@ -23,7 +23,7 @@ type ProviderConfig struct {
 	Site24x7 Site24x7Config `json:"site24x7"`
 }
 
-// Site24x7Config is the configration for the Site24x7 website monitor
+// Site24x7Config is the configuration for the Site24x7 website monitor
 // provider.
 type Site24x7Config struct {
 	// ClientID is the OAuth2 client ID provided by Site24x7. If not specified,

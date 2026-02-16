@@ -8,6 +8,7 @@ import (
 	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/config"
 	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/monitor/fake"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,6 +17,41 @@ import (
 	fakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
+
+// matchIngressWithAnnotations creates a matcher that verifies an ingress has
+// the expected name, namespace, and annotations, while ignoring metadata like
+// TypeMeta and ResourceVersion that can vary between test runs or dependency versions.
+func matchIngressWithAnnotations(name, namespace string, annotations map[string]string) interface{} {
+	return mock.MatchedBy(func(ing *networkingv1.Ingress) bool {
+		if ing == nil {
+			return false
+		}
+		if ing.Name != name {
+			return false
+		}
+		if ing.Namespace != namespace {
+			return false
+		}
+		// Verify expected annotations are present (allows extra annotations)
+		for key, expectedValue := range annotations {
+			if ing.Annotations[key] != expectedValue {
+				return false
+			}
+		}
+		return true
+	})
+}
+
+// matchIngress creates a matcher that verifies an ingress has the expected
+// name and namespace, without checking annotations.
+func matchIngress(name, namespace string) interface{} {
+	return mock.MatchedBy(func(ing *networkingv1.Ingress) bool {
+		if ing == nil {
+			return false
+		}
+		return ing.Name == name && ing.Namespace == namespace
+	})
+}
 
 func TestIngressReconciler_Reconcile(t *testing.T) {
 	tests := []struct {
@@ -37,12 +73,7 @@ func TestIngressReconciler_Reconcile(t *testing.T) {
 				},
 			},
 			setup: func(s *fake.Service) {
-				s.On("DeleteMonitor", &networkingv1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "foo",
-						Namespace: "kube-system",
-					},
-				}).Return(nil)
+				s.On("DeleteMonitor", matchIngress("foo", "kube-system")).Return(nil)
 			},
 		},
 		{
@@ -69,23 +100,12 @@ func TestIngressReconciler_Reconcile(t *testing.T) {
 				})
 			},
 			setup: func(s *fake.Service) {
-				ing := &networkingv1.Ingress{
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "Ingress",
-						APIVersion: "networking.k8s.io/v1",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "bar",
-						Namespace: "kube-system",
-						Annotations: map[string]string{
-							config.AnnotationEnabled: "true",
-						},
-						ResourceVersion: "999",
-					},
+				annotations := map[string]string{
+					config.AnnotationEnabled: "true",
 				}
 
-				s.On("AnnotateIngress", ing).Return(false, nil)
-				s.On("EnsureMonitor", ing).Return(nil)
+				s.On("AnnotateIngress", matchIngressWithAnnotations("bar", "kube-system", annotations)).Return(false, nil)
+				s.On("EnsureMonitor", matchIngressWithAnnotations("bar", "kube-system", annotations)).Return(nil)
 			},
 		},
 		{
@@ -112,22 +132,11 @@ func TestIngressReconciler_Reconcile(t *testing.T) {
 				})
 			},
 			setup: func(s *fake.Service) {
-				ing := &networkingv1.Ingress{
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "Ingress",
-						APIVersion: "networking.k8s.io/v1",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "bar",
-						Namespace: "kube-system",
-						Annotations: map[string]string{
-							config.AnnotationEnabled: "true",
-						},
-						ResourceVersion: "999",
-					},
+				annotations := map[string]string{
+					config.AnnotationEnabled: "true",
 				}
 
-				s.On("AnnotateIngress", ing).Return(true, nil)
+				s.On("AnnotateIngress", matchIngressWithAnnotations("bar", "kube-system", annotations)).Return(true, nil)
 			},
 		},
 		{
@@ -151,17 +160,7 @@ func TestIngressReconciler_Reconcile(t *testing.T) {
 				})
 			},
 			setup: func(s *fake.Service) {
-				s.On("DeleteMonitor", &networkingv1.Ingress{
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "Ingress",
-						APIVersion: "networking.k8s.io/v1",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name:            "bar",
-						Namespace:       "kube-system",
-						ResourceVersion: "999",
-					},
-				}).Return(nil)
+				s.On("DeleteMonitor", matchIngress("bar", "kube-system")).Return(nil)
 			},
 		},
 	}
@@ -195,6 +194,9 @@ func TestIngressReconciler_Reconcile(t *testing.T) {
 			if test.validate != nil {
 				test.validate(t, client, svc)
 			}
+
+			// Verify all expected mock calls were made
+			svc.AssertExpectations(t)
 		})
 	}
 }
