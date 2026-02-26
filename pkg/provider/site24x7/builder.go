@@ -1,10 +1,10 @@
 package site24x7
 
 import (
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/config"
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/models"
 	site24x7 "github.com/Bonial-International-GmbH/site24x7-go"
 	site24x7api "github.com/Bonial-International-GmbH/site24x7-go/api"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/config"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/models"
 )
 
 type builder struct {

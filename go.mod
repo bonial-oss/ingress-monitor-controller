@@ -1,4 +1,4 @@
-module github.com/Bonial-International-GmbH/ingress-monitor-controller
+module github.com/bonial-oss/ingress-monitor-controller
 
 go 1.25.0
 

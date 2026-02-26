@@ -3,7 +3,7 @@ package monitor
 import (
 	"strings"
 
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/config"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/config"
 	networkingv1 "k8s.io/api/networking/v1"
 )
 

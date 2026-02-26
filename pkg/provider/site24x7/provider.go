@@ -3,10 +3,10 @@ package site24x7
 import (
 	"time"
 
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/config"
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/models"
 	site24x7 "github.com/Bonial-International-GmbH/site24x7-go"
 	"github.com/Bonial-International-GmbH/site24x7-go/location"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/config"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/models"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/cache"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"

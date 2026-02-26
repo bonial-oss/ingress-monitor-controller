@@ -1,7 +1,7 @@
 package null
 
 import (
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/models"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/models"
 )
 
 // Provider does not perform any monitor actions. This is useful for testing.

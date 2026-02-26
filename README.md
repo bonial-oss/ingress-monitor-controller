@@ -1,9 +1,9 @@
 ingress-monitor-controller
 ==========================
 
-[![Build Status](https://github.com/Bonial-International-GmbH/ingress-monitor-controller/actions/workflows/build.yml/badge.svg)](https://github.com/Bonial-International-GmbH/ingress-monitor-controller/actions/workflows/build.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/Bonial-International-GmbH/ingress-monitor-controller?style=flat)](https://goreportcard.com/report/github.com/Bonial-International-GmbH/ingress-monitor-controller)
-[![GoDoc](https://godoc.org/github.com/Bonial-International-GmbH/ingress-monitor-controller?status.svg)](https://godoc.org/github.com/Bonial-International-GmbH/ingress-monitor-controller)
+[![Build Status](https://github.com/bonial-oss/ingress-monitor-controller/actions/workflows/build.yml/badge.svg)](https://github.com/bonial-oss/ingress-monitor-controller/actions/workflows/build.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bonial-oss/ingress-monitor-controller?style=flat)](https://goreportcard.com/report/github.com/bonial-oss/ingress-monitor-controller)
+[![GoDoc](https://godoc.org/github.com/bonial-oss/ingress-monitor-controller?status.svg)](https://godoc.org/github.com/bonial-oss/ingress-monitor-controller)
 
 A Kubernetes controller for automatically configuring website monitors for
 ingresses. Currently the following providers are supported:
@@ -178,4 +178,4 @@ provided by the kubernetes
 [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime) the
 ingress-monitor-controller also exposes metric stats about monitor creations,
 updates and deletions prefixed with `ingress_monitor_controller_*`, see
-[`pkg/monitor/metrics`](https://godoc.org/github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/monitor/metrics).
+[`pkg/monitor/metrics`](https://godoc.org/github.com/bonial-oss/ingress-monitor-controller/pkg/monitor/metrics).

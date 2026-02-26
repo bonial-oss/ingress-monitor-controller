@@ -4,11 +4,11 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/config"
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/models"
 	site24x7api "github.com/Bonial-International-GmbH/site24x7-go/api"
 	"github.com/Bonial-International-GmbH/site24x7-go/fake"
 	"github.com/Bonial-International-GmbH/site24x7-go/location"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/config"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/util/cache"

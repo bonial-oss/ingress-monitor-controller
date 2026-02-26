@@ -6,9 +6,9 @@ import (
 	"os"
 
 	"dario.cat/mergo"
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/config"
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/controller"
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/monitor"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/config"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/controller"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/monitor"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	networkingv1 "k8s.io/api/networking/v1"

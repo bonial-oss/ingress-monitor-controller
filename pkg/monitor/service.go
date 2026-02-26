@@ -1,11 +1,11 @@
 package monitor
 
 import (
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/config"
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/ingress"
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/models"
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/monitor/metrics"
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/provider"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/config"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/ingress"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/models"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/monitor/metrics"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/provider"
 	networkingv1 "k8s.io/api/networking/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )

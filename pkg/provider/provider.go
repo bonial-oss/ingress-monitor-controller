@@ -1,10 +1,10 @@
 package provider
 
 import (
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/config"
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/models"
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/provider/null"
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/provider/site24x7"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/config"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/models"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/provider/null"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/provider/site24x7"
 	"github.com/pkg/errors"
 )
 

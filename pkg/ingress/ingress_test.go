@@ -3,7 +3,7 @@ package ingress
 import (
 	"testing"
 
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/config"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/config"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

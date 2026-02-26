@@ -4,9 +4,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/config"
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/models"
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/provider/fake"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/config"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/models"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/provider/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"

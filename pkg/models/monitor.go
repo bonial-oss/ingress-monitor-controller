@@ -3,7 +3,7 @@ package models
 import (
 	"errors"
 
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/config"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/config"
 )
 
 // ErrMonitorNotFound must be returned by monitor providers if a monitor cannot

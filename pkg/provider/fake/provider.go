@@ -1,7 +1,7 @@
 package fake
 
 import (
-	"github.com/Bonial-International-GmbH/ingress-monitor-controller/pkg/models"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/models"
 	"github.com/stretchr/testify/mock"
 )
 
