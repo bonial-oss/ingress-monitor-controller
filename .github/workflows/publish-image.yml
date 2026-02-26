@@ -2,9 +2,9 @@
 name: publish-image
 on:
   push:
-    # Publish `master` as `latest` image tag.
+    # Publish `main` as `latest` image tag.
     branches:
-      - master
+      - main
     # Publish `v1.2.3` tags as releases.
     tags:
       - v*
@@ -38,8 +38,8 @@ jobs:
           # Strip git ref prefix from version
           VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
 
-          # Use Docker `latest` tag convention for `master` branch
-          if [ "$VERSION" == "master" ]; then
+          # Use Docker `latest` tag convention for `main` branch
+          if [ "$VERSION" == "main" ]; then
             VERSION=latest
           fi
 
