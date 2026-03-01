@@ -2,7 +2,7 @@ module github.com/bonial-oss/ingress-monitor-controller
 
 go 1.25.0
 
-toolchain go1.25.7
+toolchain go1.26.0
 
 require (
 	dario.cat/mergo v1.0.2
