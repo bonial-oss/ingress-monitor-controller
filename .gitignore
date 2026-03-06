@@ -4,3 +4,4 @@
 coverage.txt
 ingress-monitor-controller
 .vscode
+megalinter-reports
