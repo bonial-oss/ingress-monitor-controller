@@ -4,12 +4,22 @@ import (
 	"bytes"
 	"text/template"
 
-	networkingv1 "k8s.io/api/networking/v1"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/models"
 )
 
 type templateArgs struct {
+	// Kind is the kind of the Kubernetes resource (e.g. "Ingress" or
+	// "HTTPRoute").
+	Kind string
+
+	// Name is the name of the Kubernetes resource.
+	Name string
+
+	// IngressName is an alias for Name, kept for backward compatibility with
+	// existing name templates.
 	IngressName string
-	Namespace   string
+
+	Namespace string
 }
 
 // Namer builds names for ingress monitors from a name template.
@@ -32,14 +42,16 @@ func NewNamer(nameTemplate string) (*Namer, error) {
 	return n, nil
 }
 
-// Name builds a monitor name for given ingress. Returns an error if rendering
-// the name template fails.
-func (n *Namer) Name(ingress *networkingv1.Ingress) (string, error) {
+// Name builds a monitor name for the given source. Returns an error if
+// rendering the name template fails.
+func (n *Namer) Name(source models.MonitorSource) (string, error) {
 	var buf bytes.Buffer
 
 	err := n.template.Execute(&buf, templateArgs{
-		IngressName: ingress.Name,
-		Namespace:   ingress.Namespace,
+		Kind:        source.Kind,
+		Name:        source.Name,
+		IngressName: source.Name,
+		Namespace:   source.Namespace,
 	})
 	if err != nil {
 		return "", err

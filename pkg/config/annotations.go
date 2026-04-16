@@ -18,6 +18,11 @@ const (
 	// AnnotationForceHTTPS forces the monitor to use HTTPS if set to "true".
 	AnnotationForceHTTPS = "ingress-monitor.bonial.com/force-https"
 
+	// AnnotationForceHTTP forces the monitor to use HTTP instead of HTTPS if
+	// set to "true". This is primarily useful for HTTPRoute resources which
+	// default to HTTPS.
+	AnnotationForceHTTP = "ingress-monitor.bonial.com/force-http"
+
 	// AnnotationPathOverride configures a custom path that should be monitored
 	// (e.g. "/health").
 	AnnotationPathOverride = "ingress-monitor.bonial.com/path-override"

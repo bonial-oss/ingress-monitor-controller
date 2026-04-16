@@ -38,6 +38,13 @@ var (
 		Name: "ingress_monitor_controller_ingress_validation_errors_total",
 		Help: "Total number of ingress validation errors by namespace and ingress name",
 	}, []string{"namespace", "name"})
+
+	// HTTPRouteValidationErrorsTotal is a counter for the total number of
+	// failed HTTPRoute validation events.
+	HTTPRouteValidationErrorsTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "ingress_monitor_controller_httproute_validation_errors_total",
+		Help: "Total number of HTTPRoute validation errors by namespace and name",
+	}, []string{"namespace", "name"})
 )
 
 func init() {
@@ -46,5 +53,6 @@ func init() {
 		MonitorsUpdatedTotal,
 		MonitorsDeletedTotal,
 		IngressValidationErrorsTotal,
+		HTTPRouteValidationErrorsTotal,
 	)
 }

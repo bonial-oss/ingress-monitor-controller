@@ -10,6 +10,27 @@ import (
 // be found.
 var ErrMonitorNotFound = errors.New("monitor not found")
 
+// MonitorSource is a resource-agnostic representation of a Kubernetes resource
+// (e.g. Ingress or HTTPRoute) that serves as input for creating monitors.
+type MonitorSource struct {
+	// Kind is the kind of the Kubernetes resource (e.g. "Ingress" or
+	// "HTTPRoute"). This can be used in name templates to disambiguate
+	// resources.
+	Kind string
+
+	// Name is the name of the Kubernetes resource.
+	Name string
+
+	// Namespace is the namespace of the Kubernetes resource.
+	Namespace string
+
+	// Annotations are the annotations on the Kubernetes resource.
+	Annotations map[string]string
+
+	// URL is the pre-built monitor URL derived from the resource spec.
+	URL string
+}
+
 // Monitor is a container for a website monitor.
 type Monitor struct {
 	// ID is the provider specific ID of a monitor.

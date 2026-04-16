@@ -2,7 +2,6 @@ package monitor
 
 import (
 	"github.com/bonial-oss/ingress-monitor-controller/pkg/config"
-	"github.com/bonial-oss/ingress-monitor-controller/pkg/ingress"
 	"github.com/bonial-oss/ingress-monitor-controller/pkg/models"
 	"github.com/bonial-oss/ingress-monitor-controller/pkg/monitor/metrics"
 	"github.com/bonial-oss/ingress-monitor-controller/pkg/provider"
@@ -15,22 +14,28 @@ var log = logf.Log.WithName("monitor-service")
 // Service defines the interface for a service that takes care of creating,
 // updating or deleting monitors.
 type Service interface {
-	// EnsureMonitor ensures that a monitor is in sync with the current ingress
-	// configuration. If the monitor does not exist, it will be created.
-	EnsureMonitor(ingress *networkingv1.Ingress) error
+	// EnsureMonitor ensures that a monitor is in sync with the given source.
+	// If the monitor does not exist, it will be created.
+	EnsureMonitor(source models.MonitorSource) error
 
-	// DeleteMonitor deletes the monitor for an ingress. It must not be treated
-	// as an error if the monitor was already deleted.
-	DeleteMonitor(ingress *networkingv1.Ingress) error
+	// DeleteMonitor deletes the monitor for the given source. It must not be
+	// treated as an error if the monitor was already deleted.
+	DeleteMonitor(source models.MonitorSource) error
+}
+
+// IngressService extends Service with Ingress-specific functionality for
+// managing provider IP source range whitelisting on Ingress resources.
+type IngressService interface {
+	Service
 
 	// GetProviderIPSourceRanges retrieves the IP source ranges that the
 	// monitor provider is using to perform checks from. It is a list of CIDR
-	// blocks. These source ranges can be used to update the IP whitelist (if
-	// one is defined) of an ingress to allow checks by the monitor provider.
-	GetProviderIPSourceRanges(ingress *networkingv1.Ingress) ([]string, error)
+	// blocks.
+	GetProviderIPSourceRanges(source models.MonitorSource) ([]string, error)
 
-	// AnnotateIngress updates annotations of ingress if needed. If annotations
-	// were added, updated or deleted, the return value will be true.
+	// AnnotateIngress updates annotations of ingress if needed. If
+	// annotations were added, updated or deleted, the return value will be
+	// true.
 	AnnotateIngress(ingress *networkingv1.Ingress) (updated bool, err error)
 }
 
@@ -42,7 +47,7 @@ type service struct {
 
 // NewService creates a new Service with options. Returns an error if service
 // initialization fails.
-func NewService(options *config.Options) (Service, error) {
+func NewService(options *config.Options) (IngressService, error) {
 	provider, err := provider.New(options.ProviderName, options.ProviderConfig)
 	if err != nil {
 		return nil, err
@@ -63,15 +68,8 @@ func NewService(options *config.Options) (Service, error) {
 }
 
 // EnsureMonitor implements Service.
-func (s *service) EnsureMonitor(ing *networkingv1.Ingress) error {
-	err := ingress.Validate(ing)
-	if err != nil {
-		metrics.IngressValidationErrorsTotal.WithLabelValues(ing.Namespace, ing.Name).Inc()
-		log.V(1).Info("ignoring unsupported ingress", "namespace", ing.Namespace, "name", ing.Name, "error", err)
-		return nil
-	}
-
-	newMonitor, err := s.buildMonitorModel(ing)
+func (s *service) EnsureMonitor(source models.MonitorSource) error {
+	newMonitor, err := s.buildMonitorModel(source)
 	if err != nil {
 		return err
 	}
@@ -87,8 +85,8 @@ func (s *service) EnsureMonitor(ing *networkingv1.Ingress) error {
 }
 
 // DeleteMonitor implements Service.
-func (s *service) DeleteMonitor(ingress *networkingv1.Ingress) error {
-	name, err := s.namer.Name(ingress)
+func (s *service) DeleteMonitor(source models.MonitorSource) error {
+	name, err := s.namer.Name(source)
 	if err != nil {
 		return err
 	}
@@ -142,36 +140,24 @@ func (s *service) deleteMonitor(name string) error {
 	return nil
 }
 
-func (s *service) buildMonitorModel(ing *networkingv1.Ingress) (*models.Monitor, error) {
-	name, err := s.namer.Name(ing)
-	if err != nil {
-		return nil, err
-	}
-
-	url, err := ingress.BuildMonitorURL(ing)
+func (s *service) buildMonitorModel(source models.MonitorSource) (*models.Monitor, error) {
+	name, err := s.namer.Name(source)
 	if err != nil {
 		return nil, err
 	}
 
 	monitor := &models.Monitor{
-		URL:         url,
+		URL:         source.URL,
 		Name:        name,
-		Annotations: ing.Annotations,
+		Annotations: source.Annotations,
 	}
 
 	return monitor, nil
 }
 
-// GetProviderIPSourceRanges implements Service.
-func (s *service) GetProviderIPSourceRanges(ing *networkingv1.Ingress) ([]string, error) {
-	err := ingress.Validate(ing)
-	if err != nil {
-		metrics.IngressValidationErrorsTotal.WithLabelValues(ing.Namespace, ing.Name).Inc()
-		log.V(1).Info("ignoring unsupported ingress", "namespace", ing.Namespace, "name", ing.Name, "error", err)
-		return nil, nil
-	}
-
-	monitor, err := s.buildMonitorModel(ing)
+// GetProviderIPSourceRanges implements IngressService.
+func (s *service) GetProviderIPSourceRanges(source models.MonitorSource) ([]string, error) {
+	monitor, err := s.buildMonitorModel(source)
 	if err != nil {
 		return nil, err
 	}

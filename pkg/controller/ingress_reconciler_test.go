@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bonial-oss/ingress-monitor-controller/pkg/config"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/models"
 	"github.com/bonial-oss/ingress-monitor-controller/pkg/monitor/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -42,14 +43,11 @@ func matchIngressWithAnnotations(name, namespace string, annotations map[string]
 	})
 }
 
-// matchIngress creates a matcher that verifies an ingress has the expected
-// name and namespace, without checking annotations.
-func matchIngress(name, namespace string) interface{} {
-	return mock.MatchedBy(func(ing *networkingv1.Ingress) bool {
-		if ing == nil {
-			return false
-		}
-		return ing.Name == name && ing.Namespace == namespace
+// matchMonitorSource creates a matcher that verifies a MonitorSource has the
+// expected name and namespace.
+func matchMonitorSource(name, namespace string) interface{} {
+	return mock.MatchedBy(func(source models.MonitorSource) bool {
+		return source.Name == name && source.Namespace == namespace
 	})
 }
 
@@ -73,7 +71,7 @@ func TestIngressReconciler_Reconcile(t *testing.T) {
 				},
 			},
 			setup: func(s *fake.Service) {
-				s.On("DeleteMonitor", matchIngress("foo", "kube-system")).Return(nil)
+				s.On("DeleteMonitor", matchMonitorSource("foo", "kube-system")).Return(nil)
 			},
 		},
 		{
@@ -97,6 +95,11 @@ func TestIngressReconciler_Reconcile(t *testing.T) {
 							config.AnnotationEnabled: "true",
 						},
 					},
+					Spec: networkingv1.IngressSpec{
+						Rules: []networkingv1.IngressRule{
+							{Host: "bar.example.com"},
+						},
+					},
 				})
 			},
 			setup: func(s *fake.Service) {
@@ -105,7 +108,7 @@ func TestIngressReconciler_Reconcile(t *testing.T) {
 				}
 
 				s.On("AnnotateIngress", matchIngressWithAnnotations("bar", "kube-system", annotations)).Return(false, nil)
-				s.On("EnsureMonitor", matchIngressWithAnnotations("bar", "kube-system", annotations)).Return(nil)
+				s.On("EnsureMonitor", matchMonitorSource("bar", "kube-system")).Return(nil)
 			},
 		},
 		{
@@ -127,6 +130,11 @@ func TestIngressReconciler_Reconcile(t *testing.T) {
 						Namespace: "kube-system",
 						Annotations: map[string]string{
 							config.AnnotationEnabled: "true",
+						},
+					},
+					Spec: networkingv1.IngressSpec{
+						Rules: []networkingv1.IngressRule{
+							{Host: "bar.example.com"},
 						},
 					},
 				})
@@ -160,7 +168,7 @@ func TestIngressReconciler_Reconcile(t *testing.T) {
 				})
 			},
 			setup: func(s *fake.Service) {
-				s.On("DeleteMonitor", matchIngress("bar", "kube-system")).Return(nil)
+				s.On("DeleteMonitor", matchMonitorSource("bar", "kube-system")).Return(nil)
 			},
 		},
 	}

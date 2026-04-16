@@ -24,6 +24,7 @@ type Options struct {
 	NameTemplate       string
 	NoDelete           bool
 	CreationDelay      time.Duration
+	EnableHTTPRoute    bool
 	ProviderConfig     ProviderConfig
 }
 
@@ -43,6 +44,7 @@ func (o *Options) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.NameTemplate, "name-template", o.NameTemplate, "The template to use for the monitor name. Valid fields are: .IngressName, .Namespace.")
 	cmd.Flags().StringVar(&o.Namespace, "namespace", o.Namespace, "Namespace to watch. If empty, all namespaces are watched.")
 	cmd.Flags().StringVar(&o.ProviderConfigFile, "provider-config", o.ProviderConfigFile, "Location of the config file for the monitor providers.")
+	cmd.Flags().BoolVar(&o.EnableHTTPRoute, "enable-httproute", o.EnableHTTPRoute, "Enable watching Gateway API HTTPRoute resources for monitor creation.")
 	cmd.Flags().StringVar(&o.ProviderName, "provider", o.ProviderName, "The provider to use for creating monitors.")
 }
 

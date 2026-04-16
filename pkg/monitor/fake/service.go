@@ -1,6 +1,7 @@
 package fake
 
 import (
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/models"
 	"github.com/stretchr/testify/mock"
 	networkingv1 "k8s.io/api/networking/v1"
 )
@@ -9,20 +10,20 @@ type Service struct {
 	mock.Mock
 }
 
-func (s *Service) EnsureMonitor(ingress *networkingv1.Ingress) error {
-	args := s.Called(ingress)
+func (s *Service) EnsureMonitor(source models.MonitorSource) error {
+	args := s.Called(source)
 
 	return args.Error(0)
 }
 
-func (s *Service) DeleteMonitor(ingress *networkingv1.Ingress) error {
-	args := s.Called(ingress)
+func (s *Service) DeleteMonitor(source models.MonitorSource) error {
+	args := s.Called(source)
 
 	return args.Error(0)
 }
 
-func (s *Service) GetProviderIPSourceRanges(ingress *networkingv1.Ingress) ([]string, error) {
-	args := s.Called(ingress)
+func (s *Service) GetProviderIPSourceRanges(source models.MonitorSource) ([]string, error) {
+	args := s.Called(source)
 
 	var ips []string
 	if arg, ok := args.Get(0).([]string); ok {
