@@ -15,7 +15,7 @@ build: ## build ingress-monitor-controller
 	go build \
 		-ldflags "-s -w" \
 		-o $(BINARY) \
-		main.go
+		.
 
 .PHONY: docker-build
 docker-build: ## build docker image
