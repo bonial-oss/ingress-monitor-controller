@@ -4,21 +4,37 @@ import (
 	"strings"
 
 	"github.com/bonial-oss/ingress-monitor-controller/pkg/config"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/ingress"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/monitor/metrics"
 	networkingv1 "k8s.io/api/networking/v1"
 )
 
 const nginxWhitelistSourceRangeAnnotation = "nginx.ingress.kubernetes.io/whitelist-source-range"
 
-// AnnotateIngress implements Service.
-func (s *service) AnnotateIngress(ingress *networkingv1.Ingress) (bool, error) {
-	log := log.WithValues("namespace", ingress.Namespace, "name", ingress.Name)
+// AnnotateIngress updates the nginx whitelist source range annotation on the
+// ingress with provider IP source ranges if needed. Returns true if the
+// ingress annotations were updated.
+func (s *service) AnnotateIngress(ing *networkingv1.Ingress) (bool, error) {
+	log := log.WithValues("namespace", ing.Namespace, "name", ing.Name)
 
-	if !shouldPatchSourceRangeWhitelist(ingress) {
+	if !shouldPatchSourceRangeWhitelist(ing) {
 		log.V(1).Info("ingress does not require patching of source range whitelist")
 		return false, nil
 	}
 
-	providerSourceRanges, err := s.GetProviderIPSourceRanges(ingress)
+	err := ingress.Validate(ing)
+	if err != nil {
+		metrics.IngressValidationErrorsTotal.WithLabelValues(ing.Namespace, ing.Name).Inc()
+		log.V(1).Info("ignoring unsupported ingress", "error", err)
+		return false, nil
+	}
+
+	source, err := ingress.NewMonitorSource(ing)
+	if err != nil {
+		return false, err
+	}
+
+	providerSourceRanges, err := s.GetProviderIPSourceRanges(source)
 	if err != nil {
 		return false, err
 	}
@@ -28,7 +44,7 @@ func (s *service) AnnotateIngress(ingress *networkingv1.Ingress) (bool, error) {
 		return false, nil
 	}
 
-	sourceRanges := strings.Split(ingress.Annotations[nginxWhitelistSourceRangeAnnotation], ",")
+	sourceRanges := strings.Split(ing.Annotations[nginxWhitelistSourceRangeAnnotation], ",")
 
 	sourceRanges, updated := mergeProviderSourceRanges(sourceRanges, providerSourceRanges)
 	if !updated {
@@ -38,7 +54,7 @@ func (s *service) AnnotateIngress(ingress *networkingv1.Ingress) (bool, error) {
 
 	log.Info("patching ingress")
 
-	ingress.Annotations[nginxWhitelistSourceRangeAnnotation] = strings.Join(sourceRanges, ",")
+	ing.Annotations[nginxWhitelistSourceRangeAnnotation] = strings.Join(sourceRanges, ",")
 
 	return true, nil
 }

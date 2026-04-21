@@ -6,7 +6,8 @@ ingress-monitor-controller
 [![GoDoc](https://godoc.org/github.com/bonial-oss/ingress-monitor-controller?status.svg)](https://godoc.org/github.com/bonial-oss/ingress-monitor-controller)
 
 A Kubernetes controller for automatically configuring website monitors for
-ingresses. Currently the following providers are supported:
+Ingress and [Gateway API](https://gateway-api.sigs.k8s.io/) HTTPRoute
+resources. Currently the following providers are supported:
 
 - [Site24x7](https://www.site24x7.com)
 - Null provider (only useful for testing and debugging)
@@ -46,15 +47,16 @@ Configuration
 
 The following CLI flags are available:
 
-| Flag                | Description                                                                           | Default                           |
-| ------              | -------------                                                                         | ---------                         |
-| `--debug`           | Enable debug logging.                                                                 | `false`                           |
-| `--provider`        | The provider to use for creating monitors.                                            | `site24x7`                        |
-| `--provider-config` | Location of the config file for the monitor providers.                                | `""`                              |
-| `--name-template`   | The template to use for the monitor name. Valid fields are: .IngressName, .Namespace. | `{{.Namespace}}-{{.IngressName}}` |
-| `--namespace`       | Namespace to watch. If empty, all namespaces are watched.                             | `""`                              |
-| `--creation-delay`  | Duration to wait after an ingress is created before creating the monitor for it.      | `0s`                              |
-| `--no-delete`       | If set, monitors will not be deleted if the ingress is deleted.                       | `false`                           |
+| Flag                  | Description                                                                                        | Default                           |
+| ------                | -------------                                                                                      | ---------                         |
+| `--debug`             | Enable debug logging.                                                                              | `false`                           |
+| `--provider`          | The provider to use for creating monitors.                                                         | `site24x7`                        |
+| `--provider-config`   | Location of the config file for the monitor providers.                                             | `""`                              |
+| `--name-template`     | The template to use for the monitor name. Valid fields are: .Name, .IngressName, .Kind, .Namespace. | `{{.Namespace}}-{{.IngressName}}` |
+| `--namespace`         | Namespace to watch. If empty, all namespaces are watched.                                          | `""`                              |
+| `--creation-delay`    | Duration to wait after a resource is created before creating the monitor for it.                   | `0s`                              |
+| `--no-delete`         | If set, monitors will not be deleted if the resource is deleted.                                   | `false`                           |
+| `--enable-httproute`  | Enable watching Gateway API HTTPRoute resources for monitor creation.                              | `false`                           |
 
 ### Provider Configuration File
 
@@ -122,15 +124,44 @@ metadata:
   namespace: my-namespace
 ```
 
-### Global Ingress Annotations
+### HTTPRoute Annotations
 
-Global ingress annotations configure behaviour that is not specific to a
-certain provider. The following annotations are supported:
+To create a website monitor for a Gateway API HTTPRoute, enable HTTPRoute
+support with the `--enable-httproute` flag and annotate your HTTPRoute
+resources:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  annotations:
+    ingress-monitor.bonial.com/enabled: "true"
+  name: my-route
+  namespace: my-namespace
+spec:
+  hostnames:
+    - app.example.com
+```
+
+HTTPRoute monitors default to HTTPS. To force HTTP, use the
+`ingress-monitor.bonial.com/force-http: "true"` annotation.
+
+All provider-specific annotations (e.g. `site24x7.ingress-monitor.bonial.com/*`)
+work the same way on HTTPRoute resources as they do on Ingresses.
+
+Note that the source range rewriting feature (automatic whitelist patching)
+does not apply to HTTPRoute resources.
+
+### Global Annotations
+
+Global annotations configure behaviour that is not specific to a certain
+provider. The following annotations are supported:
 
 | Annotation                                 | Description                                                                                | Default   |
 | ------------                               | -------------                                                                              | --------- |
-| `ingress-monitor.bonial.com/enabled`       | Controls whether a monitor should be created for the ingress or not                        | `false`   |
-| `ingress-monitor.bonial.com/force-https`   | Forces the monitored URL to be HTTPS even if TLS is not configured for the ingress         | `false`   |
+| `ingress-monitor.bonial.com/enabled`       | Controls whether a monitor should be created for the resource or not                       | `false`   |
+| `ingress-monitor.bonial.com/force-https`   | Forces the monitored URL to be HTTPS even if TLS is not configured (Ingress only)          | `false`   |
+| `ingress-monitor.bonial.com/force-http`    | Forces the monitored URL to be HTTP instead of HTTPS (HTTPRoute only)                      | `false`   |
 | `ingress-monitor.bonial.com/path-override` | By default, `/` is monitored. This can be overridden with this annotation (e.g. `/health`) | `/`       |
 
 ### Supported Third Party Annotations
@@ -164,11 +195,21 @@ annotation of an ingress if the following rules apply:
 Limitations
 -----------
 
-The controller only creates monitors for the host defined in the first ingress
-rule (`spec.rules[0].host`), or if using TLS, for the first host in the TLS
-spec (`spec.tls[0].hosts[0]`), and only if those do not contain wildcards
-(`*`). If you want to create monitors for multiple hostnames, simply create
-dedicated ingress objects for them.
+For **Ingress** resources, the controller only creates monitors for the host
+defined in the first ingress rule (`spec.rules[0].host`), or if using TLS, for
+the first host in the TLS spec (`spec.tls[0].hosts[0]`), and only if those do
+not contain wildcards (`*`).
+
+For **HTTPRoute** resources, the controller monitors the first hostname in
+`spec.hostnames[0]` and does not support wildcard hostnames.
+
+If you want to create monitors for multiple hostnames, create dedicated
+Ingress or HTTPRoute resources for them.
+
+Note that if an Ingress and an HTTPRoute in the same namespace have the same
+name, they will produce the same monitor name with the default name template.
+Use the `--name-template` flag with `{{.Kind}}` or customize monitor names to
+avoid collisions.
 
 Metrics
 -------

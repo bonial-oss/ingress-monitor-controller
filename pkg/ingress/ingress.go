@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/bonial-oss/ingress-monitor-controller/pkg/config"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/models"
 	"github.com/pkg/errors"
 	networkingv1 "k8s.io/api/networking/v1"
 )
@@ -77,4 +78,21 @@ func forceHTTPS(ingress *networkingv1.Ingress) bool {
 
 func containsWildcard(hostName string) bool {
 	return strings.Contains(hostName, "*")
+}
+
+// NewMonitorSource creates a MonitorSource from an Ingress resource. The
+// ingress must have been validated before calling this function.
+func NewMonitorSource(ing *networkingv1.Ingress) (models.MonitorSource, error) {
+	monitorURL, err := BuildMonitorURL(ing)
+	if err != nil {
+		return models.MonitorSource{}, err
+	}
+
+	return models.MonitorSource{
+		Kind:        "Ingress",
+		Name:        ing.Name,
+		Namespace:   ing.Namespace,
+		Annotations: ing.Annotations,
+		URL:         monitorURL,
+	}, nil
 }

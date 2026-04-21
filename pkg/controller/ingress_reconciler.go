@@ -5,24 +5,36 @@ import (
 	"time"
 
 	"github.com/bonial-oss/ingress-monitor-controller/pkg/config"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/ingress"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/models"
 	"github.com/bonial-oss/ingress-monitor-controller/pkg/monitor"
+	"github.com/bonial-oss/ingress-monitor-controller/pkg/monitor/metrics"
 	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
+
+// IngressService defines the monitor service interface needed by the Ingress
+// reconciler.
+type IngressService interface {
+	monitor.Service
+
+	// AnnotateIngress updates annotations of ingress if needed. If annotations
+	// were added, updated or deleted, the return value will be true.
+	AnnotateIngress(ingress *networkingv1.Ingress) (updated bool, err error)
+}
 
 // IngressReconciler reconciles ingresses to their desired state.
 type IngressReconciler struct {
 	client.Client
 
-	monitorService monitor.Service
+	monitorService IngressService
 	creationDelay  time.Duration
 }
 
 // NewIngressReconciler creates a new *IngressReconciler.
-func NewIngressReconciler(client client.Client, monitorService monitor.Service, options *config.Options) *IngressReconciler {
+func NewIngressReconciler(client client.Client, monitorService IngressService, options *config.Options) *IngressReconciler {
 	return &IngressReconciler{
 		Client:         client,
 		monitorService: monitorService,
@@ -33,23 +45,21 @@ func NewIngressReconciler(client client.Client, monitorService monitor.Service, 
 // Reconcile creates, updates or deletes ingress monitors whenever an ingress
 // changes. It implements reconcile.Reconciler.
 func (r *IngressReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	ingress := &networkingv1.Ingress{}
+	ing := &networkingv1.Ingress{}
 
-	err := r.Get(ctx, req.NamespacedName, ingress)
+	err := r.Get(ctx, req.NamespacedName, ing)
 	if apierrors.IsNotFound(err) {
-		// The ingress was deleted. Construct a metadata-only ingress object
-		// just for monitor deletion.
-		ingress = &networkingv1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      req.Name,
-				Namespace: req.Namespace,
-			},
+		// The ingress was deleted. Construct a minimal source for monitor
+		// deletion.
+		source := models.MonitorSource{
+			Name:      req.Name,
+			Namespace: req.Namespace,
 		}
 
-		err = r.monitorService.DeleteMonitor(ingress)
+		err = r.monitorService.DeleteMonitor(source)
 	} else if err == nil {
-		if ingress.Annotations[config.AnnotationEnabled] == "true" {
-			createAfter := time.Until(ingress.CreationTimestamp.Add(r.creationDelay))
+		if ing.Annotations[config.AnnotationEnabled] == "true" {
+			createAfter := time.Until(ing.CreationTimestamp.Add(r.creationDelay))
 
 			// If a creation delay was configured, we will requeue the
 			// reconciliation until after the creation delay passed.
@@ -57,17 +67,22 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req reconcile.Request
 				return reconcile.Result{RequeueAfter: createAfter}, nil
 			}
 
-			err = r.handleCreateOrUpdate(ctx, ingress)
+			err = r.handleCreateOrUpdate(ctx, ing)
 		} else {
-			err = r.monitorService.DeleteMonitor(ingress)
+			source := models.MonitorSource{
+				Name:      ing.Name,
+				Namespace: ing.Namespace,
+			}
+
+			err = r.monitorService.DeleteMonitor(source)
 		}
 	}
 
 	return reconcile.Result{}, err
 }
 
-func (r *IngressReconciler) handleCreateOrUpdate(ctx context.Context, ingress *networkingv1.Ingress) error {
-	updated, err := r.reconcileAnnotations(ctx, ingress)
+func (r *IngressReconciler) handleCreateOrUpdate(ctx context.Context, ing *networkingv1.Ingress) error {
+	updated, err := r.reconcileAnnotations(ctx, ing)
 	if err != nil || updated {
 		// In case of an error we return it here to force requeuing of the
 		// reconciliation request. If the ingress was updated, we return
@@ -79,7 +94,18 @@ func (r *IngressReconciler) handleCreateOrUpdate(ctx context.Context, ingress *n
 		return err
 	}
 
-	return r.monitorService.EnsureMonitor(ingress)
+	err = ingress.Validate(ing)
+	if err != nil {
+		metrics.IngressValidationErrorsTotal.WithLabelValues(ing.Namespace, ing.Name).Inc()
+		return nil
+	}
+
+	source, err := ingress.NewMonitorSource(ing)
+	if err != nil {
+		return err
+	}
+
+	return r.monitorService.EnsureMonitor(source)
 }
 
 // reconcileAnnotations reconciles the ingress annotations, that is, it may

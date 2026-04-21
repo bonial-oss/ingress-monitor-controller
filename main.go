@@ -102,7 +102,14 @@ func Run(options *config.Options) error {
 		For(&networkingv1.Ingress{}).
 		Complete(reconciler)
 	if err != nil {
-		return errors.Wrapf(err, "failed to create controller")
+		return errors.Wrapf(err, "failed to create ingress controller")
+	}
+
+	if options.EnableHTTPRoute {
+		err = setupHTTPRouteController(mgr, svc, options)
+		if err != nil {
+			return errors.Wrapf(err, "failed to create httproute controller")
+		}
 	}
 
 	err = mgr.Start(signals.SetupSignalHandler())
